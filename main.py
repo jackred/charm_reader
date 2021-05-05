@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 import cv2
 from skimage.color import rgb2gray
 from skimage.transform import resize
+import os
+from PIL import Image
+from math import floor
 
 cap = cv2.VideoCapture('data/video_2021-05-04_07-33-58.mp4')
 cap2 = cv2.VideoCapture('data/50mystery.mp4')
@@ -61,14 +64,18 @@ def is_different(f1, f2):
 
 def extract_frames(video):
     not_stop, frame = video.read()
+    frame = frame[:,:,::-1]
     frame = resize(frame, shape)
+    frame = rgb2gray(frame)
     res = []
     if not_stop:
         res.append(get_charm_sub_frame(frame))
         while(not_stop):
             not_stop, frame = video.read()
             if not_stop:
+                frame = frame[:,:,::-1]
                 frame = resize(frame, shape)
+                frame = rgb2gray(frame)
                 tmp = get_charm_sub_frame(frame)
                 if is_different(res[-1], tmp):
                     res.append(tmp)
@@ -103,3 +110,41 @@ def show(f, cmap=None):
     plt.imshow(f, cmap=cmap)
     plt.show(block=False)
 
+
+
+thr = 50       
+def calculateDistance(i1, i2):
+    return np.sum((i1-i2)**2)
+
+
+def find_proba(infos, skills):
+    dist_s1 = []
+    dist_s2 = []
+    for i in range(len(infos)):
+        s1 = infos[i]['skill_1']
+        s2 = infos[i]['skill_2']
+        tmp1 = []
+        tmp2 = []
+        for j in skills:
+            tmp1.append(calculateDistance(s1, skills[j]))
+            tmp2.append(calculateDistance(s2, skills[j]))
+        dist_s1.append(tmp1)
+        dist_s2.append(tmp2)
+    return np.array(dist_s1), np.array(dist_s2)
+
+
+def get_index(d1, d2, threshold=75):
+    idx_1 = np.where(d1 > threshold)
+    idx_2 = np.where(d2 > threshold)
+    
+    
+    
+# dict keep insertion orer
+def load_skills(folder='./skills'):
+    list_skill = os.listdir(folder)
+    skills = {}
+    for i in list_skill:
+        if i[-4:] == '.png':
+            skills[i[:-4]] = rgb2gray(np.array(
+                Image.open(folder+'/'+i).convert('RGB')))
+    return skills
