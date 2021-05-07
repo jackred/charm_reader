@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import cv2
 from skimage.color import rgb2gray
@@ -7,14 +8,9 @@ import os
 from PIL import Image
 from math import floor
 
-cap = cv2.VideoCapture('data/video_2021-05-04_07-33-58.mp4')
-cap2 = cv2.VideoCapture('data/50mystery.mp4')
-cap3 = cv2.VideoCapture('data/charm.mp4')
-cap4 = cv2.VideoCapture('data/mysterywithkagero.mp4')
 
-ret, frame = cap.read()
-plt.imshow(frame)
-plt.show()
+## need to clean code
+
 
 shape = (720, 1280, 3)
 
@@ -38,6 +34,8 @@ value_x = range(228, 236)
 value_1_y = range(116, 131)
 value_2_y = range(166, 181)
 
+index=['rarity', 'skill_1', 'value_1', 'skill_2',
+       'value_2', 'slot_1', 'slot_2', 'slot_3']
 
 def get_sub_frame(frame, x, y):
     return frame[y][:, x]
@@ -46,14 +44,18 @@ def get_sub_frame(frame, x, y):
 def get_rarity(frame):
     return get_sub_frame(frame, rarity_x, rarity_y)
 
+
 def get_slot_1(frame):
     return get_sub_frame(frame, slot_1_x, slot_y)
+
 
 def get_slot_2(frame):
     return get_sub_frame(frame, slot_2_x, slot_y)
 
+
 def get_slot_3(frame):
     return get_sub_frame(frame, slot_2_x, slot_y)
+
 
 def get_skill_1(frame):
     return get_sub_frame(frame, skill_x, skill_1_y)
@@ -82,7 +84,6 @@ def is_different(f1, f2):
 def process_image(image):
     image = image[:, :, ::-1]
     image = resize(image, shape)
-    #image = rgb2gray(image)
     return image
 
 
@@ -102,6 +103,31 @@ def extract_frames(video):
     return res
 
 
+def read_frames(video, data):
+    not_stop, frame = video.read()
+    frame = process_image(frame)
+    res = pd.DataFrame(columns=index)
+    if not_stop:
+        tmp = get_charm_sub_frame(frame)
+        infos = get_all_infos(tmp)
+        reading = read_infos_charm(infos, data)
+        if not (reading == '').all():
+            # kinda useless to index in reading before but eh
+            res = res.append(reading, ignore_index=True)
+        while(not_stop):
+            not_stop, frame = video.read()
+            if not_stop:
+                frame = process_image(frame)
+                tmp = get_charm_sub_frame(frame)
+                infos = get_all_infos(tmp)
+                reading = read_infos_charm(infos, data)
+                if not (reading == '').all() \
+                   and (len(res) == 0
+                        or not ((reading == res.iloc[-1]).all())):
+                    res = res.append(reading, ignore_index=True)
+    return res
+    
+
 def get_all_infos(frame):
     res = {}
     res['slot_1'] = rgb2gray(get_slot_1(frame))
@@ -115,50 +141,22 @@ def get_all_infos(frame):
     return res
 
 
-def plot_infos(infos):
-    length = int(len(infos)/2)
-    fig, axs = plt.subplots(length, 2)
-    for i, k in enumerate(infos):
-        axs[i % length][floor(i/length)].imshow(infos[k])
-        axs[i % length][floor(i/length)].set_title(k)
-
-
-def plot_frame_infos(frame):
-    infos = get_all_infos(frame)
-    plot_infos(infos)
-    plt.show()
-
-
 def show(f, cmap=None):
     plt.imshow(f, cmap=cmap)
     plt.show(block=False)
 
 
-
-thr = 50  
 def calculateDistance(i1, i2):
     return np.sum((i1-i2)**2)
 
-# same as below, but less time
-def find_proba_skill(s1, s2, skills):
-    dist_s1 = []
-    dist_s2 = []
-    for j in skills:
-        dist_s1.append(calculateDistance(s1, skills[j]))
-        dist_s2.append(calculateDistance(s2, skills[j]))
-    return np.array(dist_s1), np.array(dist_s2)
 
 def find_proba(element, list_name):
     return np.array([calculateDistance(element, e) for e in list_name.values()])
 
-# use get_index, too lazy to do rn
-# even tho it prolly took me longer to write this comment
-# than to do it
-def get_indexs(s1, s2, threshold=70):
-    return np.where(s1 < threshold)[0], np.where(s2 < threshold)[0]
 
 def get_index(ele, threshold):
     return np.where(ele < threshold)[0]
+
 
 def link_element(id_e, list_name):
     if len(id_e) == 1:
@@ -169,96 +167,108 @@ def link_element(id_e, list_name):
         return 'Multiple match found:' + ' '.join(list_name[id_e])
 
 
-def read_skill_charm(s1, s2, skills, skills_name):
-    th_1, th_2 = find_proba_skill(s1, s2, skills)
-    id_s1, id_s2 = get_indexs(th_1, th_2, 70)
-    return link_element(id_s1, skills_name), link_element(id_s2, skills_name)
-
-def read_rarity_charm(r, rarities, rarities_name):
-    th = find_proba(r, rarities)
-    id_r = get_index(th, 40)
-    return link_element(id_r, rarities_name)
-
-# litterally the same function
-# todo: only one
-# again lazy rn
-def read_value_charm(v, values, values_name):
-    th = find_proba(v, values)
-    id_v = get_index(th, 10)
-    return link_element(id_v, values_name)
-
-def read_slot_charm(s, slots, slots_name):
-    th = find_proba(s, slots)
-    id_s = get_index(th, 10)
-    return link_element(id_s, slots_name)
+def read_info(elem, list_elem, list_elem_name, threshold):
+    th = find_proba(elem, list_elem)
+    id_e = get_index(th, threshold)
+    return link_element(id_e, list_elem_name)
 
 
-def read_infos_charm(infos, skills, skills_name, rarities, rarities_name,
-                     values, values_name, slots, slots_name):
-    res = {}
-    res['rarity'] = read_rarity_charm(infos['rarity'], rarities, rarities_name)
-    res['skill_1'], res['skill_2'] = read_skill_charm(
-        infos['skill_1'], infos['skill_2'], skills, skills_name)
-    res['value_1'] = read_value_charm(infos['value_1'], values, values_name)
-    res['value_2'] = read_value_charm(infos['value_2'], values, values_name)
-    res['slot_1'] = read_value_charm(infos['slot_1'], slots, slots_name)
-    res['slot_2'] = read_value_charm(infos['slot_2'], slots, slots_name)
-    res['slot_3'] = read_value_charm(infos['slot_3'], slots, slots_name)
+def read_slot_charm(elem, list_elem, list_elem_name):
+    return read_info(elem, list_elem, list_elem_name, 10)
+
+
+def read_rarity_charm(elem, list_elem, list_elem_name):
+    return read_info(elem, list_elem, list_elem_name, 40)
+
+
+def read_value_charm(elem, list_elem, list_elem_name):
+    return read_info(elem, list_elem, list_elem_name, 10)
+
+
+def read_skill_charm(elem, list_elem, list_elem_name):
+    return read_info(elem, list_elem, list_elem_name, 70)
+
+
+def read_infos_charm(infos, data):
+    res = pd.Series(index=index, dtype=str)
+    res['rarity'] = read_rarity_charm(infos['rarity'], data['rarities'], data['rarities_name'])
+    res['skill_1'] = read_skill_charm(infos['skill_1'], data['skills'], data['skills_name'])
+    res['value_1'] = read_value_charm(infos['value_1'], data['values'], data['values_name'])
+    res['skill_2'] = read_skill_charm(infos['skill_2'], data['skills'], data['skills_name'])
+    res['value_2'] = read_value_charm(infos['value_2'], data['values'], data['values_name'])
+    res['slot_1'] = read_value_charm(infos['slot_1'], data['slots'], data['slots_name'])
+    res['slot_2'] = read_value_charm(infos['slot_2'], data['slots'], data['slots_name'])
+    res['slot_3'] = read_value_charm(infos['slot_3'], data['slots'], data['slots_name'])
     return res
 
-# same as all, make only one function
+
+def load_data():
+    data = {}
+    data['skills'] = load_skills()
+    data['values'] = load_values()
+    data['rarities'] = load_rarities()
+    data['slots'] = load_slots()
+    data['skills_name'] = np.array(list(data['skills']))
+    data['values_name'] = np.array(list(data['values']))
+    data['rarities_name'] = np.array(list(data['rarities']))
+    data['slots_name'] = np.array(list(data['slots']))
+    return data
+    
 # dict keep insertion order
+def load(folder, gray=True):
+    list_elem = os.listdir(folder)
+    elems = {}
+    for i in list_elem:
+        if i[-4:] == '.png':
+            tmp = np.array(Image.open(folder+'/'+i).convert('RGB'))
+            if gray:
+                tmp = rgb2gray(tmp)
+            else:
+                tmp = tmp/255
+            elems[i[:-4].replace('_', '/')] = tmp
+    return elems
+
+
 def load_skills(folder='./skills'):
-    list_skill = os.listdir(folder)
-    skills = {}
-    for i in list_skill:
-        if i[-4:] == '.png':
-            skills[i[:-4].replace('_', '/')] = rgb2gray(np.array(
-                Image.open(folder+'/'+i).convert('RGB')))
-    return skills
-
-# dict keep insertion order
-def load_values(folder='./value'):
-    list_value = os.listdir(folder)
-    value = {}
-    for i in list_value:
-        if i[-4:] == '.png':
-            value[i[:-4].replace('_', '/')] = rgb2gray(np.array(
-                Image.open(folder+'/'+i).convert('RGB')))
-    return value
+    return load(folder)
 
 
-# dict keep insertion orer
+def load_values(folder='./values'):
+    return load(folder)
+
+
 def load_rarities(folder='./rarities'):
-    list_rarity = os.listdir(folder)
-    rarities = {}
-    for i in list_rarity:
-        if i[-4:] == '.png':
-            rarities[i[:-4]] = np.array(
-                Image.open(folder+'/'+i).convert('RGB')) / 255
-    return rarities
+    return load(folder, False)
 
 
 def load_slots(folder='./slots'):
-    list_slot = os.listdir(folder)
-    slots = {}
-    for i in list_slot:
-        if i[-4:] == '.png':
-            slots[i[:-4]] = rgb2gray(np.array(
-                Image.open(folder+'/'+i).convert('RGB')))
-    return slots
+    return load(folder)
 
 
+def save(title, image, folder, cmap='gray'):
+    plt.imsave('./%s/%s.png' % (folder, title), image, cmap=cmap)
 
-# same
+
 def save_skill(title, image):
-    plt.imsave('./skills/%s.png' % (title), image, cmap='gray')
+    save(title, image, 'skills')
+
 
 def save_rarity(title, image):
-    plt.imsave('./rarities/%s.png' % (title), image)
+    save(title, image, 'rarities', None)
+
 
 def save_value(title, image):
-    plt.imsave('./values/%s.png' % (title), image, cmap='gray')
+    save(title, image, 'values')
+
 
 def save_slot(title, image):
-    plt.imsave('./slots/%s.png' % (title), image, cmap='gray')
+    save(title, image, 'slots')
+
+
+def save_csv(charms, name):
+    charms['mix'] = (charms['skill_1'] + ' ' + charms['value_1'] + ' '
+                     + charms['skill_2'] + ' ' + charms['value_2']).str.strip()
+    charms['slots'] = (charms['slot_1'] + '-' + charms['slot_2']
+                       + '-' + charms['slot_3'])
+    charms = charms[['skill_1', 'value_1', 'skill_2', 'value_2', 'mix', 'slots']]
+    charms.to_csv(name, index=False)
