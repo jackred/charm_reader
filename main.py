@@ -24,8 +24,11 @@ y_range = range(190, 375)
 rarity_x = range(180, 239)
 rarity_y = range(3, 22)
 
-slot_x = range(150, 239)
 slot_y = range(23, 47)
+
+slot_1_x = range(154, 181) # 26
+slot_2_x = range(182, 209) # 27
+slot_3_x = range(209, 236) # 27
 
 skill_x = range(23, 174)
 skill_1_y = range(89, 108)
@@ -43,10 +46,14 @@ def get_sub_frame(frame, x, y):
 def get_rarity(frame):
     return get_sub_frame(frame, rarity_x, rarity_y)
 
+def get_slot_1(frame):
+    return get_sub_frame(frame, slot_1_x, slot_y)
 
-def get_slot(frame):
-    return get_sub_frame(frame, slot_x, slot_y)
+def get_slot_2(frame):
+    return get_sub_frame(frame, slot_2_x, slot_y)
 
+def get_slot_3(frame):
+    return get_sub_frame(frame, slot_2_x, slot_y)
 
 def get_skill_1(frame):
     return get_sub_frame(frame, skill_x, skill_1_y)
@@ -97,7 +104,9 @@ def extract_frames(video):
 
 def get_all_infos(frame):
     res = {}
-    res['slot'] = rgb2gray(get_slot(frame))
+    res['slot_1'] = rgb2gray(get_slot_1(frame))
+    res['slot_2'] = rgb2gray(get_slot_2(frame))
+    res['slot_3'] = rgb2gray(get_slot_3(frame))
     res['skill_1'] = rgb2gray(get_skill_1(frame))
     res['skill_2'] = rgb2gray(get_skill_2(frame))
     res['rarity'] = get_rarity(frame)
@@ -165,10 +174,10 @@ def read_skill_charm(s1, s2, skills, skills_name):
     id_s1, id_s2 = get_indexs(th_1, th_2, 70)
     return link_element(id_s1, skills_name), link_element(id_s2, skills_name)
 
-def read_rarity_charm(r, raritys, raritys_name):
-    th = find_proba(r, raritys)
+def read_rarity_charm(r, rarities, rarities_name):
+    th = find_proba(r, rarities)
     id_r = get_index(th, 40)
-    return link_element(id_r, raritys_name)
+    return link_element(id_r, rarities_name)
 
 # litterally the same function
 # todo: only one
@@ -178,14 +187,23 @@ def read_value_charm(v, values, values_name):
     id_v = get_index(th, 10)
     return link_element(id_v, values_name)
 
-def read_infos_charm(infos, skills, skills_name, raritys, raritys_name,
-                     values, values_name):
+def read_slot_charm(s, slots, slots_name):
+    th = find_proba(s, slots)
+    id_s = get_index(th, 10)
+    return link_element(id_s, slots_name)
+
+
+def read_infos_charm(infos, skills, skills_name, rarities, rarities_name,
+                     values, values_name, slots, slots_name):
     res = {}
-    res['rarity'] = read_rarity_charm(infos['rarity'], raritys, raritys_name)
+    res['rarity'] = read_rarity_charm(infos['rarity'], rarities, rarities_name)
     res['skill_1'], res['skill_2'] = read_skill_charm(
         infos['skill_1'], infos['skill_2'], skills, skills_name)
     res['value_1'] = read_value_charm(infos['value_1'], values, values_name)
     res['value_2'] = read_value_charm(infos['value_2'], values, values_name)
+    res['slot_1'] = read_value_charm(infos['slot_1'], slots, slots_name)
+    res['slot_2'] = read_value_charm(infos['slot_2'], slots, slots_name)
+    res['slot_3'] = read_value_charm(infos['slot_3'], slots, slots_name)
     return res
 
 # same as all, make only one function
@@ -211,23 +229,36 @@ def load_values(folder='./value'):
 
 
 # dict keep insertion orer
-def load_raritys(folder='./rarity'):
+def load_rarities(folder='./rarities'):
     list_rarity = os.listdir(folder)
-    raritys = {}
+    rarities = {}
     for i in list_rarity:
         if i[-4:] == '.png':
-            raritys[i[:-4]] = np.array(
+            rarities[i[:-4]] = np.array(
                 Image.open(folder+'/'+i).convert('RGB')) / 255
-    return raritys
+    return rarities
+
+
+def load_slots(folder='./slots'):
+    list_slot = os.listdir(folder)
+    slots = {}
+    for i in list_slot:
+        if i[-4:] == '.png':
+            slots[i[:-4]] = rgb2gray(np.array(
+                Image.open(folder+'/'+i).convert('RGB')))
+    return slots
 
 
 
-
-def save_skills(title, image):
+# same
+def save_skill(title, image):
     plt.imsave('./skills/%s.png' % (title), image, cmap='gray')
 
 def save_rarity(title, image):
-    plt.imsave('./rarity/%s.png' % (title), image)
+    plt.imsave('./rarities/%s.png' % (title), image)
 
 def save_value(title, image):
-    plt.imsave('./value/%s.png' % (title), image, cmap='gray')
+    plt.imsave('./values/%s.png' % (title), image, cmap='gray')
+
+def save_slot(title, image):
+    plt.imsave('./slots/%s.png' % (title), image, cmap='gray')
