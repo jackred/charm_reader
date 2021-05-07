@@ -10,6 +10,7 @@ from math import floor
 cap = cv2.VideoCapture('data/video_2021-05-04_07-33-58.mp4')
 cap2 = cv2.VideoCapture('data/50mystery.mp4')
 cap3 = cv2.VideoCapture('data/charm.mp4')
+cap4 = cv2.VideoCapture('data/mysterywithkagero.mp4')
 
 ret, frame = cap.read()
 plt.imshow(frame)
@@ -74,7 +75,7 @@ def is_different(f1, f2):
 def process_image(image):
     image = image[:, :, ::-1]
     image = resize(image, shape)
-    image = rgb2gray(image)
+    #image = rgb2gray(image)
     return image
 
 
@@ -96,12 +97,12 @@ def extract_frames(video):
 
 def get_all_infos(frame):
     res = {}
-    res['slot'] = get_slot(frame)
-    res['skill_1'] = get_skill_1(frame)
-    res['skill_2'] = get_skill_2(frame)
+    res['slot'] = rgb2gray(get_slot(frame))
+    res['skill_1'] = rgb2gray(get_skill_1(frame))
+    res['skill_2'] = rgb2gray(get_skill_2(frame))
     res['rarity'] = get_rarity(frame)
-    res['value_1'] = get_value_1(frame)
-    res['value_2'] = get_value_2(frame)
+    res['value_1'] = rgb2gray(get_value_1(frame))
+    res['value_2'] = rgb2gray(get_value_2(frame))
     return res
 
 
@@ -129,7 +130,7 @@ thr = 50
 def calculateDistance(i1, i2):
     return np.sum((i1-i2)**2)
 
-
+# same as below, but less time
 def find_proba_skill(s1, s2, skills):
     dist_s1 = []
     dist_s2 = []
@@ -138,59 +139,95 @@ def find_proba_skill(s1, s2, skills):
         dist_s2.append(calculateDistance(s2, skills[j]))
     return np.array(dist_s1), np.array(dist_s2)
 
-            
-def find_proba(infos, skills):
-    dist_s1 = []
-    dist_s2 = []
-    for i in range(len(infos)):
-        s1 = infos[i]['skill_1']
-        s2 = infos[i]['skill_2']
-        tmp1 = []
-        tmp2 = []
-        for j in skills:
-            tmp1.append(calculateDistance(s1, skills[j]))
-            tmp2.append(calculateDistance(s2, skills[j]))
-        dist_s1.append(tmp1)
-        dist_s2.append(tmp2)
-    return np.array(dist_s1), np.array(dist_s2)
+def find_proba(element, list_name):
+    return np.array([calculateDistance(element, e) for e in list_name.values()])
 
-
-def get_index(s1, s2, threshold=50):
+# use get_index, too lazy to do rn
+# even tho it prolly took me longer to write this comment
+# than to do it
+def get_indexs(s1, s2, threshold=70):
     return np.where(s1 < threshold)[0], np.where(s2 < threshold)[0]
 
+def get_index(ele, threshold):
+    return np.where(ele < threshold)[0]
 
-def link_skill(id_s, skills):
-    if len(id_s) == 1:
-        return skills[id_s[0]]
-    elif len(id_s) == 0:
+def link_element(id_e, list_name):
+    if len(id_e) == 1:
+        return list_name[id_e[0]]
+    elif len(id_e) == 0:
         return ''
     else:
-        return 'Multiple match found:' + ' '.join(skills[id_s])
+        return 'Multiple match found:' + ' '.join(list_name[id_e])
 
 
 def read_skill_charm(s1, s2, skills, skills_name):
     th_1, th_2 = find_proba_skill(s1, s2, skills)
-    id_s1, id_s2 = get_index(th_1, th_2)
-    return link_skill(id_s1, skills_name), link_skill(id_s2, skills_name)
+    id_s1, id_s2 = get_indexs(th_1, th_2, 70)
+    return link_element(id_s1, skills_name), link_element(id_s2, skills_name)
 
+def read_rarity_charm(r, raritys, raritys_name):
+    th = find_proba(r, raritys)
+    id_r = get_index(th, 40)
+    return link_element(id_r, raritys_name)
 
-def read_infos_charm(infos, skills, skills_name):
+# litterally the same function
+# todo: only one
+# again lazy rn
+def read_value_charm(v, values, values_name):
+    th = find_proba(v, values)
+    id_v = get_index(th, 10)
+    return link_element(id_v, values_name)
+
+def read_infos_charm(infos, skills, skills_name, raritys, raritys_name,
+                     values, values_name):
     res = {}
+    res['rarity'] = read_rarity_charm(infos['rarity'], raritys, raritys_name)
     res['skill_1'], res['skill_2'] = read_skill_charm(
         infos['skill_1'], infos['skill_2'], skills, skills_name)
+    res['value_1'] = read_value_charm(infos['value_1'], values, values_name)
+    res['value_2'] = read_value_charm(infos['value_2'], values, values_name)
     return res
 
-
-# dict keep insertion orer
+# same as all, make only one function
+# dict keep insertion order
 def load_skills(folder='./skills'):
     list_skill = os.listdir(folder)
     skills = {}
     for i in list_skill:
         if i[-4:] == '.png':
-            skills[i[:-4]] = rgb2gray(np.array(
+            skills[i[:-4].replace('_', '/')] = rgb2gray(np.array(
                 Image.open(folder+'/'+i).convert('RGB')))
     return skills
+
+# dict keep insertion order
+def load_values(folder='./value'):
+    list_value = os.listdir(folder)
+    value = {}
+    for i in list_value:
+        if i[-4:] == '.png':
+            value[i[:-4].replace('_', '/')] = rgb2gray(np.array(
+                Image.open(folder+'/'+i).convert('RGB')))
+    return value
+
+
+# dict keep insertion orer
+def load_raritys(folder='./rarity'):
+    list_rarity = os.listdir(folder)
+    raritys = {}
+    for i in list_rarity:
+        if i[-4:] == '.png':
+            raritys[i[:-4]] = np.array(
+                Image.open(folder+'/'+i).convert('RGB')) / 255
+    return raritys
+
+
 
 
 def save_skills(title, image):
     plt.imsave('./skills/%s.png' % (title), image, cmap='gray')
+
+def save_rarity(title, image):
+    plt.imsave('./rarity/%s.png' % (title), image)
+
+def save_value(title, image):
+    plt.imsave('./value/%s.png' % (title), image, cmap='gray')
