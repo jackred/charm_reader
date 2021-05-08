@@ -10,7 +10,10 @@ from math import floor
 
 
 ## need to clean code
-
+th_slot = 13
+th_skill = 70
+th_value = 13
+th_rarity = 40
 
 shape = (720, 1280, 3)
 
@@ -54,7 +57,7 @@ def get_slot_2(frame):
 
 
 def get_slot_3(frame):
-    return get_sub_frame(frame, slot_2_x, slot_y)
+    return get_sub_frame(frame, slot_3_x, slot_y)
 
 
 def get_skill_1(frame):
@@ -158,35 +161,39 @@ def get_index(ele, threshold):
     return np.where(ele < threshold)[0]
 
 
-def link_element(id_e, list_name):
+def link_element(id_e, list_name, th, threshold, i=0):
     if len(id_e) == 1:
         return list_name[id_e[0]]
     elif len(id_e) == 0:
         return ''
     else:
-        return 'Multiple match found:' + ' '.join(list_name[id_e])
+        if i < 3:
+            id_e = get_index(th, threshold/2)
+            return link_element(id_e, list_name, th, threshold/2, i+1)
+        else:
+            return 'Multiple match found:' + ' '.join(list_name[id_e])
 
 
 def read_info(elem, list_elem, list_elem_name, threshold):
     th = find_proba(elem, list_elem)
     id_e = get_index(th, threshold)
-    return link_element(id_e, list_elem_name)
+    return link_element(id_e, list_elem_name, th, threshold)
 
 
 def read_slot_charm(elem, list_elem, list_elem_name):
-    return read_info(elem, list_elem, list_elem_name, 10)
+    return read_info(elem, list_elem, list_elem_name, th_slot)
 
 
 def read_rarity_charm(elem, list_elem, list_elem_name):
-    return read_info(elem, list_elem, list_elem_name, 40)
+    return read_info(elem, list_elem, list_elem_name, th_rarity)
 
 
 def read_value_charm(elem, list_elem, list_elem_name):
-    return read_info(elem, list_elem, list_elem_name, 10)
+    return read_info(elem, list_elem, list_elem_name, th_value)
 
 
 def read_skill_charm(elem, list_elem, list_elem_name):
-    return read_info(elem, list_elem, list_elem_name, 70)
+    return read_info(elem, list_elem, list_elem_name, th_skill)
 
 
 def read_infos_charm(infos, data):
