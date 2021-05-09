@@ -37,7 +37,7 @@
   - They will be treated in alphabetic order. By defaults, switch recording name are ordered by date, so if you use the default name, the output should be in the same order as you made the opening
   - If you use other name than the correct one, rename the videos (or do it one by one)
 - Run:
-  - If you are on Windows, open a `powershell` at the project location, and write `py main.py`
+  - If you are on Windows, open a `powershell` at the project location, and write `python main.py`
   - If you are on LInux, open a terminal at the project location and write `python main.py`
 - Wait for the programme to finish. A file named *output.csv* should have been generated in the *videos* folder.
 
