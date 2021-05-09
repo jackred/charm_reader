@@ -12,7 +12,7 @@
   - You can also directly type `powershell` in the address bar at the top of the file explorer opened at your project location (you can also use the shortcuts `Alt`+`D` or `Ctrl`+`L`)
   - You can also press *File* (at the top) and choose "*Open Windows PowerShell*"
 - You can check you are in the good folder by running `dir` and check that the list of files written is the same as in your file explorer
-- Write the following command: `py -m pip install -r requirements.txt`
+- Write the following command: `python -m pip install -r requirements.txt`
 
 ### Linux
 
