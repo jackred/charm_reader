@@ -325,7 +325,7 @@ def save_csv(charms, name):
     charms['mix'] = (charms['skill_1'] + ' ' + charms['value_1'] + ' '
                      + charms['skill_2'] + ' ' + charms['value_2']).str.strip()
     charms['slots'] = (charms['slot_1'] + '-' + charms['slot_2']
-                       + '-' + charms['slot_3'])
+                       + '-' + charms['slot_3']).str.replace('-0', '').replace('0', '')
     charms = charms[['skill_1', 'value_1', 'skill_2',
                      'value_2', 'mix', 'slots']]
     charms.to_csv(name, index=False)
