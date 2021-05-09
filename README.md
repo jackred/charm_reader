@@ -13,6 +13,7 @@
   - You can also press *File* (at the top) and choose "*Open Windows PowerShell*"
 - You can check you are in the good folder by running `dir` and check that the list of files written is the same as in your file explorer
 - Write the following command: `python -m pip install -r requirements.txt`
+  - Known issue: impossibility to install `scikit-learn` dur to OSError, see https://github.com/scikit-learn/scikit-learn/issues/19306 and https://www.howtogeek.com/266621/how-to-make-windows-10-accept-file-paths-over-260-characters/
 
 ### Linux
 
