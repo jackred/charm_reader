@@ -136,16 +136,18 @@ def read_frames(video, data):
     res = pd.DataFrame(columns=index)
     if not_stop:
         reading = look_at_one_frame(frame, data)
-        if not (reading == '').all():
+        if not (reading[['skill_1', 'slot_1', 'slot_2', 'slot_3', 'rarity']]
+                == '').any():
             # kinda useless to index in reading before but eh
             res = res.append(reading, ignore_index=True)
         while(not_stop):
             not_stop, frame = video.read()
             if not_stop:
                 reading = look_at_one_frame(frame, data)
-                if not (reading == '').all() \
-                   and (len(res) == 0
-                        or not ((reading == res.iloc[-1]).all())):
+                if not (reading[['skill_1', 'slot_1', 'slot_2', 'slot_3',
+                                 'rarity']] == '').any() \
+                        and (len(res) == 0
+                             or not ((reading == res.iloc[-1]).all())):
                     res = res.append(reading, ignore_index=True)
     return res
 
