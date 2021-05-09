@@ -6,7 +6,7 @@ from skimage.color import rgb2gray
 from skimage.transform import resize
 import os
 from PIL import Image
-
+import sys
 
 # need to clean code
 th_slot = 20
@@ -122,25 +122,27 @@ def same_infos(i1, i2):
                 for i in i2])
 
 
+def look_at_one_frame(frame, data):
+    frame = process_image(frame)
+    tmp = get_charm_sub_frame(frame)
+    infos = get_all_infos(tmp)
+    reading = read_infos_charm(infos, data)
+    return reading
+
+
 # to clean
 def read_frames(video, data):
     not_stop, frame = video.read()
-    frame = process_image(frame)
     res = pd.DataFrame(columns=index)
     if not_stop:
-        tmp = get_charm_sub_frame(frame)
-        infos = get_all_infos(tmp)
-        reading = read_infos_charm(infos, data)
+        reading = look_at_one_frame(frame, data)
         if not (reading == '').all():
             # kinda useless to index in reading before but eh
             res = res.append(reading, ignore_index=True)
         while(not_stop):
             not_stop, frame = video.read()
             if not_stop:
-                frame = process_image(frame)
-                tmp = get_charm_sub_frame(frame)
-                infos = get_all_infos(tmp)
-                reading = read_infos_charm(infos, data)
+                reading = look_at_one_frame(frame, data)
                 if not (reading == '').all() \
                    and (len(res) == 0
                         or not ((reading == res.iloc[-1]).all())):
@@ -156,9 +158,11 @@ def read_video(filename, data):
 def read_videos(folder_name):
     data = load_data()
     files = os.listdir(folder_name)
+    files.sort()
     res = pd.DataFrame(columns=index)
     for i in files:
         if i[-4:] == '.mp4':
+            print('Reading {}'.format(i))
             res = res.append(read_video(folder_name + '/' + i, data))
     return res
 
@@ -323,3 +327,10 @@ def save_csv(charms, name):
     charms = charms[['skill_1', 'value_1', 'skill_2',
                      'value_2', 'mix', 'slots']]
     charms.to_csv(name, index=False)
+
+
+if __name__ == '__main__':
+    # useless to make argument people
+    # people won't use
+    folder_name = './videos'
+    read_videos_store_csv(folder_name)
