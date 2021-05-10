@@ -6,7 +6,6 @@ from skimage.color import rgb2gray
 from skimage.transform import resize
 import os
 from PIL import Image
-import sys
 
 # need to clean code
 th_slot = 20
