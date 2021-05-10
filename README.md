@@ -4,7 +4,7 @@
 
 ### Windows
 
-- Download the [release](https://github.com/jackred/charm_reader/releases/tag/0.2)
+- Download the [release](https://github.com/jackred/charm_reader/releases/tag/0.2.1)
 - Extract it wherever you want
 - Install *Python* from the Microsoft Store
 - Open a `powershell` window and move in the folder of the project
@@ -17,7 +17,7 @@
 
 ### Linux
 
-- Download the [release](https://github.com/jackred/charm_reader/releases/tag/0.2)
+- Download the [release](https://github.com/jackred/charm_reader/releases/tag/0.2,1)
 - Extract it wherever you want and open the location in a terminal
 - Run `pip install -r requirements.txt` 
   - You can create a virtualenv beforehand if you don't want to install the packages globally
