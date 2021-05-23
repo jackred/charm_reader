@@ -29,6 +29,10 @@
 
 ## Running
 
+- Make a recording:
+  - The clip need to feature only the moment when you take your charm (when you press A) from the first to the last. The easiest way to do so is to look at all your charm beforehand, then come back to the first one and keep pressing A until you get the last one, then press capture.  
+  - You can then trim the clip from the switch.
+  - A small trick is pressing "home" before doing the recording (once you're back on the first charm) and come back, press A until the last charm and then press capture. Doing so will only record the 50 charms without the need to trim the part when you look at the charm.
 - Get the recording from your switch 
   - you can use an usb-c - usb cable, connect it to your computer, and go in "Settings" > "Data Management" > "Manage Screenshots and Videos" > "Copy to PC via USB Connection"
   - you can also, very tediously, send the video one by one to your phone by using "Send to smart device"
@@ -42,6 +46,12 @@
   - If you are on LInux, open a terminal at the project location and write `python main.py`
 - Wait for the programme to finish. A file named *output.csv* should have been generated in the *videos* folder
 - Be sure to clean the *videos* folder after each use, otherwise the videos will be read each time
+
+## Detail
+This tool compare a part of the frame with skill's screenshots save before, using a simple Euclidian distance between each pixel, and checking the sum of all distance against a threshold. 
+### Future improvement
+ - Use OCR (tesseract) to automatically recognize the character/skills (scalable for other language)
+ - Use the charm cursor position to recognize which charm is being read (using the orange color)
 
 ## Issue
 
