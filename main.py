@@ -6,6 +6,7 @@ from skimage.color import rgb2gray
 from skimage.transform import resize
 import os
 from PIL import Image
+import time
 
 # need to clean code
 th_slot = 20
@@ -153,7 +154,10 @@ def read_frames(video, data):
 
 def read_video(filename, data):
     cap = cv2.VideoCapture(filename)
-    return read_frames(cap, data)
+    res = read_frames(cap, data)
+    cap.release()
+    os.remove(filename)
+    return res
 
 
 def read_videos(folder_name):
@@ -169,8 +173,10 @@ def read_videos(folder_name):
 
 
 def read_videos_store_csv(folder_name):
+    if 'output' not in os.listdir(folder_name):
+        os.mkdir(folder_name+'/output')
     charms = read_videos(folder_name)
-    save_csv(charms, folder_name + '/output.csv')
+    save_csv(charms, folder_name + '/output/output_{}.csv'.format(int(time.time())))
 
 
 def get_all_infos(frame):
