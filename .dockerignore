@@ -1,0 +1,8 @@
+.git
+.gitignore
+env
+__pycache__
+README.md
+videos
+data
+config.py

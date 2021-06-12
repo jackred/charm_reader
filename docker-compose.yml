@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+  charm_bot:
+    container_name: charm_reader
+    build: .
+    volumes:
+      - ./config.py:/app/config.py
+      - /home/jackred/Mine_Blue/charm_reader/videos:/app/videos
+    restart: always
+    
+networks:
+  default:
+    external:
+      name: ng_network
